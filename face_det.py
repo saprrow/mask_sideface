@@ -75,7 +75,10 @@ class FaceDet():
 
 
 if __name__ == '__main__':
-    image_path = '/home/zengwb/Documents/FaceX-Zoo/face_sdk/api_usage/test_images/test1.jpg'
+    image_path = 'Data/test-data/test1.jpg'
+    #image_path = "gakki.jpeg"
     face_detector = FaceDet()
+    img = cv2.imread(image_path, cv2.IMREAD_COLOR)
+    print(img.shape)
     bboxs = face_detector(image_path)
     print(bboxs)

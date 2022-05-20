@@ -1,5 +1,5 @@
 #import sys
-#sys.path.append('../face3d/mesh/cython')
+#sys.path.append('../face3d/mesh/core_cython')
 #import mesh_core_cython
 from . import io
 from . import vis

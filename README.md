@@ -1,2 +1,4 @@
-# Face_Mask_Add
-博客讲解：https://blog.csdn.net/zengwubbb/article/details/113417485
+# Mask_Side_Face
+
+## Usage
+python main.py --input-image gakki.jpeg --output-path result --template 0.png

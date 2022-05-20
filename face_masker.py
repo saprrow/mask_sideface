@@ -17,6 +17,13 @@ from skimage.transform import estimate_transform, warp
 from utils import mesh
 from utils import read_info
 from models.prnet import PRNet
+from utils.mesh import render
+import matplotlib.pyplot as plt
+
+def draw_kpt(img, kpts):
+    for (x, y, z) in kpts.astype(np.int32):
+        z = int(z)
+        cv2.circle(img, (255-x, 255-y), 2, (z, 0, 0), -1)
 
 class PRN:
     """Process of PRNet.
@@ -164,7 +171,7 @@ class FaceMasker:
         imsave(masked_face_path, new_image)
         # 222222222222222222222222222222
         iii = copy.deepcopy(new_image)
-        pos, vertices = self.get_vertices(face_lms[1], iii)  # 3d reconstruction -> get texture.
+        pos, vertices, landmarks = self.get_vertices(face_lms[1], iii)  # 3d reconstruction -> get texture.
         image = image / 255.  # !!
         texture = cv2.remap(image, pos[:, :, :2].astype(np.float32), None,
                             interpolation=cv2.INTER_NEAREST,
@@ -188,7 +195,7 @@ class FaceMasker:
 
         Args:
             image_path(str): the image to add mask.
-            face_lms(str): face landmarks, [x1, y1, x2, y2, ..., x106, y106]
+            face_lms(list): face landmarks, [x1, y1, x2, y2, ..., x106, y106]
             template_name(str): the mask template to be added on the current image,
                                 got to '/Data/mask-data' for all template.
             masked_face_path(str): the path to save masked image.
@@ -202,15 +209,18 @@ class FaceMasker:
         [h, w, c] = image.shape
         if c == 4:
             image = image[:,:,:3]
-        pos, vertices = self.get_vertices(face_lms, image)  # 3d reconstruction -> get texture.
+        pos, vertices= self.get_vertices(face_lms, image)  # 3d reconstruction -> get texture.
         image = image/255. #!!
         texture = cv2.remap(image, pos[:,:,:2].astype(np.float32), None,
                             interpolation=cv2.INTER_NEAREST,
                             borderMode=cv2.BORDER_CONSTANT,borderValue=(0))
+        # plt.imshow(pos[..., 2], cmap='gray')
+        # plt.axis('off')
+        # plt.show()
         new_texture = self.get_new_texture(ref_texture_src, uv_mask_src, texture)
         #remap to input image.(render)
         vis_colors = np.ones((vertices.shape[0], 1))
-        face_mask = mesh.render.render_colors(vertices, self.prn.triangles, vis_colors, h, w, c = 1)
+        face_mask = render.render_colors(vertices, self.prn.triangles, vis_colors, h, w, c = 1)
         face_mask = np.squeeze(face_mask > 0).astype(np.float32)
         new_colors = self.prn.get_colors_from_texture(new_texture)
         new_image = mesh.render.render_colors(vertices, self.prn.triangles, new_colors, h, w, c = 3)
@@ -218,6 +228,19 @@ class FaceMasker:
         new_image = np.clip(new_image, -1, 1)  # must clip to (-1, 1)!
         imsave(masked_face_path, new_image)
         return new_image
+
+    def pos_filter(self, pos, window_size=10):
+        window = np.ones(int(window_size)) / float(window_size)
+        pos = np.convolve(pos, window, 'same')
+        return pos
+
+    def sqrt_polish_pos(self, pos, y_range=(100, 195), z_range=(100, 150)):
+        for y in range(y_range[0], y_range[1]+1):
+            tmp = (y_range[1] - y) / (y_range[1]-y_range[0]) * 12**2.5
+            pos[y, z_range[0]:z_range[1], 0] += np.power(tmp, 1/2.5)
+
+    def constant_polish_pos(self, pos, y_range=(100, 190), z_range=(100, 150), offset=10):
+        pos[y_range[0]:y_range[1], z_range[0]:z_range[1], 0] += offset
 
     def get_vertices(self, face_lms, image):
         """Get vertices
@@ -230,6 +253,9 @@ class FaceMasker:
         lms_info = read_info.read_landmark_106_array(face_lms)
         # print(lms_info.shape)   # (68, 2)
         pos = self.prn.process(image, lms_info)
+        self.constant_polish_pos(pos)
+        #self.pos_filter(pos)
+        #pos[100:190,100:150,0] += 9
         vertices = self.prn.get_vertices(pos)
         # print(pos.shape, vertices.shape)  # (256, 256, 3) (43867, 3)
         return pos, vertices

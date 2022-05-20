@@ -63,7 +63,7 @@ class FaceDetModelHandler(BaseModelHandler):
             A tensor, the shape is 4.
         """
         if not isinstance(image, np.ndarray):
-            logger.error('The input should be the ndarray read by cv2!')
+            logger.info('The input should be the ndarray read by cv2!')
             raise InputError()
         img = np.float32(image)
         scale = torch.Tensor([img.shape[1], img.shape[0], img.shape[1], img.shape[0]])

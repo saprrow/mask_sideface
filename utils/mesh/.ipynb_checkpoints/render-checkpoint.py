@@ -22,7 +22,7 @@ ipdb.set_trace()
 sys.path.insert(0, '/home/liuyinglu2/notespace/code/face3d/face3d/mesh')
 import cython
 import mesh_core_cython
-#from .cython import mesh_core_cython
+#from .core_cython import mesh_core_cython
 
 def rasterize_triangles(vertices, triangles, h, w):
     ''' 

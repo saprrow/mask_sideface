@@ -18,9 +18,8 @@ import numpy as np
 from time import time
 import sys
 #sys.path.insert(0, '/home/liuyinglu2/notespace/code/face3d/face3d/mesh')
-import cython
-from . import mesh_core_cython
-#from .cython import mesh_core_cython
+#import cython
+from utils.mesh.core_cython import mesh_core_cython
 
 def rasterize_triangles(vertices, triangles, h, w):
     ''' 
